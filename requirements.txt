@@ -1,0 +1,11 @@
+aiogram_dialog
+sqlalchemy
+aiosqlite
+pydantic_settings
+pyrogram
+PyPDF2
+moviepy
+pdf2image
+tgcrypto
+requests
+img2pdf
