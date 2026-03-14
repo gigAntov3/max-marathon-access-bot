@@ -56,6 +56,18 @@ async def set_marathons_offset(event: MessageCallback, context: MemoryContext):
             attachments=[get_promocodes_keyboard(promocodes, offset)]
         )
 
+    elif "mailing_marathons:" in event.callback.payload:
+        marathons = await marathons_repo.find_all(offset=offset, limit=10)
+
+        from handlers.admin.mailings.keyboards import (
+            get_mailing_marathons_keyboard
+        )
+
+        await event.message.edit(
+            text="Выберите марафон для рассылки",
+            attachments=[get_mailing_marathons_keyboard(marathons, offset)]
+        )
+
 
 def register_handlers(dp: Dispatcher):
     dp.message_callback.register(
