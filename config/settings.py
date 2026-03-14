@@ -21,6 +21,11 @@ class DatabaseConfig(BaseModel):
     max_overflow: int = 10
 
 
+class PaymentConfig(BaseModel):
+    shop_id: str = "1038936"
+    secret_key: str = "test_m56xrOAANO_0p6qQIDv35_t8MQMj5ldn0uJowtYExu8"
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=(".env.template", ".env"),
@@ -30,6 +35,7 @@ class Settings(BaseSettings):
     )
     bot: BotConfig = BotConfig()
     database: DatabaseConfig = DatabaseConfig()
+    payment: PaymentConfig = PaymentConfig()
 
 
 settings = Settings()

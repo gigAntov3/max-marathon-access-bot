@@ -3,7 +3,8 @@ from typing import List
 from maxapi.types.attachments.buttons import CallbackButton, LinkButton
 from maxapi.utils.inline_keyboard import InlineKeyboardBuilder
 
-from models.mailings import Mailing
+from models.mailings import Mailing, MailingButton
+from models.marathons import Marathon
 
 
 def get_mailings_keyboard(mailings: List[Mailing], offset: int = 0):
@@ -35,7 +36,6 @@ def get_mailings_keyboard(mailings: List[Mailing], offset: int = 0):
 
     return builder.as_markup()
 
-from models.mailings import MailingButton
 
 def get_mailing_preview_keyboard(buttons: List[MailingButton]):
     builder = InlineKeyboardBuilder()
@@ -49,7 +49,6 @@ def get_mailing_preview_keyboard(buttons: List[MailingButton]):
         )
 
     return builder.as_markup()
-
 
 
 def get_mailing_keyboard(mailing_id: int):
@@ -72,26 +71,7 @@ def get_mailing_keyboard(mailing_id: int):
     return builder.as_markup()
 
 
-from typing import List
-
-from maxapi.types.attachments.buttons import CallbackButton
-from maxapi.utils.inline_keyboard import InlineKeyboardBuilder
-
-from models.marathons import Marathon
-
-
-from typing import List
-
-from maxapi.types.attachments.buttons import CallbackButton
-from maxapi.utils.inline_keyboard import InlineKeyboardBuilder
-
-from models.marathons import Marathon
-
-
-def get_mailing_marathons_keyboard(
-    marathons: List[Marathon],
-    offset: int = 0
-):
+def get_mailing_marathons_keyboard(marathons: List[Marathon], offset: int = 0):
     builder = InlineKeyboardBuilder()
 
     for marathon in marathons:
