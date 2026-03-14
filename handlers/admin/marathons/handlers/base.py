@@ -124,8 +124,3 @@ def register_handlers(dp: Dispatcher):
 
     dp.message_callback.register(marathon, F.callback.payload.startswith("marathon:"))
     dp.message_callback.register(delete_marathon, F.callback.payload.startswith("delete_marathon:"))
-
-    dp.message_callback.register(
-        set_marathons_offset,
-        F.callback.payload.startswith("marathons_offset:")
-    )

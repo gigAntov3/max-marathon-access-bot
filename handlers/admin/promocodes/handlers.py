@@ -384,8 +384,6 @@ def register_handlers(dp: Dispatcher):
     dp.message_callback.register(start_admin_promocodes, F.callback.payload == "promocodes")
     dp.message_callback.register(start_admin_promocodes, F.callback.payload == "back:promocodes")
 
-    dp.message_callback.register(set_promocodes_offset, F.callback.payload.startswith("promocodes_offset:"))
-
     dp.message_callback.register(add_promocode, F.callback.payload == "add_promocode")
 
     dp.message_created.register(enter_promocode_code, AddPromoCodeState.code)

@@ -121,7 +121,7 @@ def register_handlers(dp: Dispatcher):
 
     dp.message_callback.register(marathon, F.callback.payload.startswith("client_marathon:"))
 
-    dp.message_callback.register(
-        set_marathons_offset,
-        F.callback.payload.startswith("client_marathons_offset:")
-    )
+    # dp.message_callback.register(
+    #     set_marathons_offset,
+    #     F.callback.payload.startswith("client_marathons_offset:")
+    # )

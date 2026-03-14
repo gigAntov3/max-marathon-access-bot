@@ -18,9 +18,9 @@ def get_marathons_keyboard(marathons: List[Marathon], offset: int = 0):
             )
         )
 
-    builder.row(CallbackButton(text='◀️', payload=f'marathons_offset:{offset-10}'))
+    builder.row(CallbackButton(text='◀️', payload=f'offset:admin_marathons:{offset-10}'))
     builder.add(CallbackButton(text='✅ Добавить', payload='add_marathon'))
-    builder.add(CallbackButton(text='▶️', payload=f'marathons_offset:{offset+10}'))
+    builder.add(CallbackButton(text='▶️', payload=f'offset:admin_marathons:{offset+10}'))
 
     builder.row(CallbackButton(text='⬅️ Назад', payload='back:admin'))
 

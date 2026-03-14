@@ -18,9 +18,9 @@ def get_marathons_keyboard(marathons: List[Marathon], offset: int = 0):
             )
         )
 
-    builder.row(CallbackButton(text='◀️', payload=f'client_marathons_offset:{offset-10}'))
+    builder.row(CallbackButton(text='◀️', payload=f'offset:client_marathons:{offset-10}'))
     builder.add(CallbackButton(text='⬅️ Назад', payload='back:clients'))
-    builder.add(CallbackButton(text='▶️', payload=f'client_marathons_offset:{offset+10}'))
+    builder.add(CallbackButton(text='▶️', payload=f'offset:client_marathons:{offset+10}'))
 
     return builder.as_markup()
 

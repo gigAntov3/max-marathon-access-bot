@@ -15,9 +15,9 @@ def get_promocodes_keyboard(promocodes: List[Promocode], offset: int = 0):
             )
         )
 
-    builder.row(CallbackButton(text='◀️', payload=f'promocodes_offset:{offset-10}'))
+    builder.row(CallbackButton(text='◀️', payload=f'offset:promocodes:{offset-10}'))
     builder.add(CallbackButton(text='✅ Добавить', payload='add_promocode'))
-    builder.add(CallbackButton(text='▶️', payload=f'promocodes_offset:{offset+10}'))
+    builder.add(CallbackButton(text='▶️', payload=f'offset:promocodes:{offset+10}'))
 
     builder.row(CallbackButton(text='⬅️ Назад', payload='back:admin'))
 
