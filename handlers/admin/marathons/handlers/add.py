@@ -48,11 +48,11 @@ async def back_to_enter_marathon_name(event: MessageCallback, context: MemoryCon
 
 async def enter_marathon_description(event: MessageCreated, context: MemoryContext):
     await context.update_data(description=event.message.body.text)
-    await context.set_state(AddMarathonState.type)
+    await context.set_state(AddMarathonState.photo)
 
     await event.message.answer(
-        text="Выберите тип марафона",
-        attachments=[get_marathon_type_keyboard()]
+        text="Отправьте фотографию марафона",
+        attachments=[get_back_keyboard("marathons_description")]
     )
 
 
@@ -62,6 +62,42 @@ async def back_to_enter_marathon_description(event: MessageCallback, context: Me
     await event.message.edit(
         text="Введите описание марафона",
         attachments=[get_back_keyboard("marathons_name")]
+    )
+
+
+async def enter_marathon_photo(event: MessageCreated, context: MemoryContext):
+    if not event.message.body.attachments:
+        await event.message.answer(
+            text="Пожалуйста отправьте фотографию"
+        )
+        return
+
+    photo = event.message.body.attachments[0]
+
+    if photo.type != "image":
+        await event.message.answer(
+            text="Нужно отправить именно фотографию"
+        )
+        return
+
+    await context.update_data(photo_id=photo.payload.photo_id)
+    await context.update_data(photo_token=photo.payload.token)
+    await context.update_data(photo_url=photo.payload.url)
+
+    await context.set_state(AddMarathonState.type)
+
+    await event.message.answer(
+        text="Выберите тип марафона",
+        attachments=[get_marathon_type_keyboard()]
+    )
+
+
+async def back_to_enter_marathon_photo(event: MessageCallback, context: MemoryContext):
+    await context.set_state(AddMarathonState.photo)
+
+    await event.message.edit(
+        text="Отправьте фотографию марафона",
+        attachments=[get_back_keyboard("marathons_description")]
     )
 
 
@@ -110,7 +146,7 @@ async def back_to_enter_marathon_start_date(event: MessageCallback, context: Mem
 
     await event.message.edit(
         text="Введите дату начала марафона (YYYY-MM-DD)",
-        attachments=[get_back_keyboard("marathons_start_date")]
+        attachments=[get_back_keyboard("marathons_type")]
     )
 
 
@@ -145,7 +181,7 @@ async def back_to_enter_marathon_end_date(event: MessageCallback, context: Memor
 
     await event.message.edit(
         text="Введите дату окончания марафона (YYYY-MM-DD)",
-        attachments=[get_back_keyboard("marathons_end_date")]
+        attachments=[get_back_keyboard("marathons_start_date")]
     )
 
 
@@ -158,6 +194,9 @@ async def enter_marathon_price(event: MessageCreated, context: MemoryContext):
         marathon: Marathon = await marathons_repo.add_one(
             name=data["name"],
             description=data["description"],
+            photo_id=data["photo_id"],
+            photo_token=data["photo_token"],
+            photo_url=data["photo_url"],
             type=data["type"],
             start_date=data["start_date"],
             end_date=data["end_date"],
@@ -186,6 +225,10 @@ def register_handlers(dp: Dispatcher):
     dp.message_callback.register(back_to_enter_marathon_name, F.callback.payload == "back:marathons_name")
     dp.message_created.register(enter_marathon_description, AddMarathonState.description)
     dp.message_callback.register(back_to_enter_marathon_description, F.callback.payload == "back:marathons_description")
+
+    dp.message_created.register(enter_marathon_photo, AddMarathonState.photo)
+    dp.message_callback.register(back_to_enter_marathon_photo, F.callback.payload == "back:marathons_photo")
+
     dp.message_callback.register(choose_marathon_type, F.callback.payload.startswith("marathon_type:"))
     dp.message_callback.register(back_to_enter_marathon_type, F.callback.payload == "back:marathons_type")
     dp.message_created.register(enter_marathon_start_date, AddMarathonState.start_date)

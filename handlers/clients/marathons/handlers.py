@@ -1,14 +1,18 @@
 from maxapi import Dispatcher, F
 from maxapi.types import MessageCallback
 from maxapi.context import MemoryContext
+from maxapi.types import Attachment, PhotoAttachmentPayload
 
 from models.marathons import Marathon
 from repositories.marathons import MarathonsRepository
 
-from handlers.admin.marathons.keyboards import (
+from handlers.clients.marathons.keyboards import (
     get_marathons_keyboard,
     get_marathon_keyboard,
 )
+
+from __init__ import bot
+
 
 marathons_repo = MarathonsRepository()
 
@@ -17,7 +21,7 @@ def get_id(payload: str):
     return int(payload.split(":")[1])
 
 
-async def start_admin_marathons(event: MessageCallback, context: MemoryContext):
+async def start_clients_marathons(event: MessageCallback, context: MemoryContext):
     await context.clear()
 
     marathons = await marathons_repo.find_all()
@@ -37,13 +41,6 @@ async def back_to_marathons(event: MessageCallback, context: MemoryContext):
         text="Марафоны",
         attachments=[get_marathons_keyboard(marathons)]
     )
-
-
-
-from maxapi.types import Attachment, PhotoAttachmentRequestPayload, PhotoAttachmentPayload
-# from maxapi.types.
-
-from __init__ import bot
 
 
 
@@ -119,13 +116,12 @@ async def set_marathons_offset(event: MessageCallback):
 
 def register_handlers(dp: Dispatcher):
 
-    dp.message_callback.register(start_admin_marathons, F.callback.payload == "marathons")
-    dp.message_callback.register(back_to_marathons, F.callback.payload == "back:marathons")
+    dp.message_callback.register(start_clients_marathons, F.callback.payload == "client_marathons")
+    dp.message_callback.register(back_to_marathons, F.callback.payload == "back:client_marathons")
 
-    dp.message_callback.register(marathon, F.callback.payload.startswith("marathon:"))
-    dp.message_callback.register(delete_marathon, F.callback.payload.startswith("delete_marathon:"))
+    dp.message_callback.register(marathon, F.callback.payload.startswith("client_marathon:"))
 
     dp.message_callback.register(
         set_marathons_offset,
-        F.callback.payload.startswith("marathons_offset:")
+        F.callback.payload.startswith("client_marathons_offset:")
     )

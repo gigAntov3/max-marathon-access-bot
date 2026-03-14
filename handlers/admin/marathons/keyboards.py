@@ -39,7 +39,7 @@ def get_marathon_type_keyboard():
     )
 
     builder.row(
-        CallbackButton(text="⬅️ Назад", payload="back:marathons_description")
+        CallbackButton(text="⬅️ Назад", payload="back:marathons_photo")
     )
 
     return builder.as_markup()

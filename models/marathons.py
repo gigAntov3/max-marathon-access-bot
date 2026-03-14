@@ -10,6 +10,11 @@ class Marathon(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String, nullable=False)
     description = Column(String, nullable=False)
+
+    photo_id = Column(String, nullable=True)
+    photo_token = Column(String, nullable=True)
+    photo_url = Column(String, nullable=True)
+
     type = Column(String, nullable=False)
     start_date = Column(DateTime, nullable=False)
     end_date = Column(DateTime, nullable=False)
