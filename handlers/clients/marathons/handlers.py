@@ -1,10 +1,15 @@
+import asyncio
+from datetime import datetime
+
 from maxapi import Dispatcher, F
 from maxapi.types import MessageCallback, MessageCreated
 from maxapi.context import MemoryContext
 from maxapi.types import Attachment, PhotoAttachmentPayload
+from maxapi.types.message import Message
 
 from models.users import User
 from models.marathons import Marathon
+from models.payments import Payment
 from models.promocodes import Promocode
 
 from repositories.users import UsersRepository
@@ -119,11 +124,13 @@ async def pay_marathon(event: MessageCallback, context: MemoryContext):
 
     payment = await yookassa.create_payment(marathon.price)
 
-    await payments_repo.add_one(
+    db_payment = await payments_repo.add_one(
         user_id=user.id,
         marathon_id=marathon.id,
         amount=marathon.price,
     )
+
+    asyncio.create_task(check_payment(user, marathon, db_payment.id, payment['id']))
 
     await event.message.edit(
         text="Оплатите марафон",
@@ -142,6 +149,49 @@ async def enter_promocode(event: MessageCallback, context: MemoryContext):
         text="Введите промокод",
         attachments=[get_back_keyboard(f"buy_marathon:{marathon_id}")]
     )
+
+
+
+async def check_payment(user: User, marathon: Marathon, db_payment_id: int, payment_id: str):
+    count = 0
+
+    while count < 10:
+        await asyncio.sleep(5)
+
+        payment_status = await yookassa.get_payment_status(payment_id)
+
+        if payment_status == "succeeded":
+
+            await payments_repo.update_one(
+                id=db_payment_id,
+                status="succeeded",
+                payment_date=datetime.utcnow()
+            )
+
+            await users_repo.add_marathon_to_user(user.id, marathon.id)
+
+            await bot.send_message(
+                user_id=user.user_id,
+                text="Оплата прошла успешно",
+                attachments=[get_back_keyboard("clients")]
+            )
+
+            return
+
+        count += 1
+
+    await payments_repo.update_one(
+        id=db_payment_id,
+        status="failed",
+        payment_date=datetime.utcnow()
+    )
+
+    await bot.send_message(
+        user_id=user.user_id,
+        text="Оплата не прошла",
+        attachments=[get_back_keyboard("clients")]
+    )
+
 
 
 async def check_promocode(event: MessageCreated, context: MemoryContext):
@@ -187,14 +237,15 @@ async def check_promocode(event: MessageCreated, context: MemoryContext):
         discount_amount = marathon.price - total_amount
 
         payment = await yookassa.create_payment(total_amount)
-
-        await payments_repo.add_one(
+        db_payment = await payments_repo.add_one(
             user_id=user.id,
             marathon_id=marathon.id,
             promocode_id=promocode.id,
             amount=marathon.price,
             discount_amount=discount_amount
         )
+
+        asyncio.create_task(check_payment(user, marathon, db_payment.id, payment['id']))
 
         await event.message.answer(
             text="Оплатите марафон",
@@ -204,9 +255,7 @@ async def check_promocode(event: MessageCreated, context: MemoryContext):
     await context.clear()
 
 
-
 def register_handlers(dp: Dispatcher):
-
     dp.message_callback.register(start_clients_marathons, F.callback.payload == "client_marathons")
     dp.message_callback.register(back_to_marathons, F.callback.payload == "back:client_marathons")
 
