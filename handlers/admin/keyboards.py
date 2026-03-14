@@ -28,4 +28,11 @@ def get_main_admin_keyboard():
         )
     )
 
+    builder.row(
+        CallbackButton(
+            text="📚 Гайды",
+            payload="guides"
+        )
+    )
+
     return builder.as_markup()

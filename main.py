@@ -1,5 +1,4 @@
 import asyncio
-import logging
 
 from handlers import register_handlers
 
