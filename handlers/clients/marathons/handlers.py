@@ -1,20 +1,35 @@
 from maxapi import Dispatcher, F
-from maxapi.types import MessageCallback
+from maxapi.types import MessageCallback, MessageCreated
 from maxapi.context import MemoryContext
 from maxapi.types import Attachment, PhotoAttachmentPayload
 
+from models.users import User
 from models.marathons import Marathon
+from models.promocodes import Promocode
+
+from repositories.users import UsersRepository
 from repositories.marathons import MarathonsRepository
+from repositories.payments import PaymentsRepository
+from repositories.promocodes import PromocodesRepository
 
 from handlers.clients.marathons.keyboards import (
     get_marathons_keyboard,
     get_marathon_keyboard,
+    get_buy_marathon_keyboard,
+    get_pay_marathon_keyboard,
 )
+from handlers.base.keyboards import get_back_keyboard
+
+from .states import EnterPromocodeState
 
 from __init__ import bot
+from utils.payments import yookassa
 
 
+users_repo = UsersRepository()
 marathons_repo = MarathonsRepository()
+payments_repo = PaymentsRepository()
+promocodes_repo = PromocodesRepository()
 
 
 def get_id(payload: str):
@@ -87,31 +102,107 @@ async def marathon(event: MessageCallback):
         )
 
 
-async def delete_marathon(event: MessageCallback):
+async def buy_marathon(event: MessageCallback):
     marathon_id = get_id(event.callback.payload)
 
-    await marathons_repo.delete_one(id=marathon_id)
-
-    marathons = await marathons_repo.find_all()
-
     await event.message.edit(
-        text="Марафоны",
-        attachments=[get_marathons_keyboard(marathons)]
+        text="Выберите дальнейшее действие",
+        attachments=[get_buy_marathon_keyboard(marathon_id)]
     )
 
 
-async def set_marathons_offset(event: MessageCallback):
-    offset = int(event.callback.payload.split(":")[1])
+async def pay_marathon(event: MessageCallback, context: MemoryContext):
+    marathon_id = get_id(event.callback.payload)
 
-    if offset < 0:
-        offset = 0
+    user: User = await users_repo.find_one(user_id=event.from_user.user_id)
+    marathon: Marathon = await marathons_repo.get_one(id=marathon_id)
 
-    marathons = await marathons_repo.find_all(offset=offset, limit=10)
+    payment = await yookassa.create_payment(marathon.price)
+
+    await payments_repo.add_one(
+        user_id=user.id,
+        marathon_id=marathon.id,
+        amount=marathon.price,
+    )
 
     await event.message.edit(
-        text="Марафоны",
-        attachments=[get_marathons_keyboard(marathons, offset)]
+        text="Оплатите марафон",
+        attachments=[get_pay_marathon_keyboard(marathon_id, payment['confirmation']['confirmation_url'])]
     )
+
+
+async def enter_promocode(event: MessageCallback, context: MemoryContext):
+    marathon_id = get_id(event.callback.payload)
+
+    await context.update_data(marathon_id=marathon_id)
+    
+    await context.set_state(EnterPromocodeState.code)
+
+    await event.message.edit(
+        text="Введите промокод",
+        attachments=[get_back_keyboard(f"buy_marathon:{marathon_id}")]
+    )
+
+
+async def check_promocode(event: MessageCreated, context: MemoryContext):
+    code = event.message.body.text
+
+    data = await context.get_data()
+
+    marathon_id = data["marathon_id"]
+
+    promocode: Promocode = await promocodes_repo.find_one(code=code)
+
+    if not promocode:
+        await event.message.answer(
+            text="Промокод не найден"
+        )
+        await event.message.answer(
+            text="Введите промокод",
+            attachments=[get_back_keyboard(f"buy_marathon:{marathon_id}")]
+        )
+        return
+
+    if promocode.is_valid():
+        used = await promocodes_repo.use_promocode(
+            user_id=event.from_user.user_id,
+            promocode_id=promocode.id
+        )
+
+        if not used:
+            await event.message.answer(
+                text="Промокод уже использован"
+            )
+            await event.message.answer(
+                text="Введите промокод",
+                attachments=[get_back_keyboard(f"buy_marathon:{marathon_id}")]
+            )
+            return
+        
+        user: User = await users_repo.find_one(user_id=event.from_user.user_id)
+        marathon: Marathon = await marathons_repo.get_one(id=marathon_id)
+        
+        total_amount = int(marathon.price * (100 - promocode.discount) / 100)
+
+        discount_amount = marathon.price - total_amount
+
+        payment = await yookassa.create_payment(total_amount)
+
+        await payments_repo.add_one(
+            user_id=user.id,
+            marathon_id=marathon.id,
+            promocode_id=promocode.id,
+            amount=marathon.price,
+            discount_amount=discount_amount
+        )
+
+        await event.message.answer(
+            text="Оплатите марафон",
+            attachments=[get_pay_marathon_keyboard(marathon_id, payment['confirmation']['confirmation_url'])]
+        )
+
+    await context.clear()
+
 
 
 def register_handlers(dp: Dispatcher):
@@ -121,7 +212,9 @@ def register_handlers(dp: Dispatcher):
 
     dp.message_callback.register(marathon, F.callback.payload.startswith("client_marathon:"))
 
-    # dp.message_callback.register(
-    #     set_marathons_offset,
-    #     F.callback.payload.startswith("client_marathons_offset:")
-    # )
+    dp.message_callback.register(buy_marathon, F.callback.payload.startswith("buy_marathon:"))
+
+    dp.message_callback.register(pay_marathon, F.callback.payload.startswith("pay_marathon:"))
+
+    dp.message_callback.register(enter_promocode, F.callback.payload.startswith("enter_promocode:"))
+    dp.message_created.register(check_promocode, EnterPromocodeState.code)

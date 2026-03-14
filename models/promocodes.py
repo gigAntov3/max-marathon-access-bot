@@ -17,3 +17,18 @@ class Promocode(Base):
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
+    def is_valid(self):
+        if not self.is_active:
+            return False
+        
+        if datetime.utcnow() < self.start_date:
+            return False
+        
+        if datetime.utcnow() > self.end_date:
+            return False
+        
+        if self.uses >= self.max_uses:
+            return False
+        
+        return True
+
