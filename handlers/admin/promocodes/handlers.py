@@ -40,19 +40,6 @@ async def start_admin_promocodes(event: MessageCallback, context: MemoryContext)
     )
 
 
-async def set_promocodes_offset(event: MessageCallback):
-    offset = int(event.callback.payload.split(":")[1])
-    if offset < 0:
-        offset = 0
-
-    promocodes = await promocodes_repo.find_all(offset=offset, limit=10)
-
-    await event.message.edit(
-        text="Промокоды",
-        attachments=[get_promocodes_keyboard(promocodes, offset)]
-    )
-
-
 # =========================
 # VIEW PROMOCODE
 # =========================

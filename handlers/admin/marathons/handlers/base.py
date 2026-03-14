@@ -103,20 +103,6 @@ async def delete_marathon(event: MessageCallback):
     )
 
 
-async def set_marathons_offset(event: MessageCallback):
-    offset = int(event.callback.payload.split(":")[1])
-
-    if offset < 0:
-        offset = 0
-
-    marathons = await marathons_repo.find_all(offset=offset, limit=10)
-
-    await event.message.edit(
-        text="Марафоны",
-        attachments=[get_marathons_keyboard(marathons, offset)]
-    )
-
-
 def register_handlers(dp: Dispatcher):
 
     dp.message_callback.register(start_admin_marathons, F.callback.payload == "marathons")
